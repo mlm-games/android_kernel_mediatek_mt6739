@@ -71,12 +71,12 @@ jobs:
 
     - name: Build kernel
       run: |
-        ./build_kernel.sh ${{ env.DEFCONFIG }}
+        chmod +x ./build_kernel.sh && ./build_kernel.sh ${{ env.DEFCONFIG }}
     
     
     - name: Creating AnyKernel3 zip
       run: |
-        ./kernel_zipper.sh
+        chmod +x ./kernel_zipper.sh && ./kernel_zipper.sh
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
