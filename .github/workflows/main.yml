@@ -39,6 +39,12 @@ jobs:
       fail-fast: true
     permissions:
       contents: write
+    env:
+      # Set BRANCH_NAME based on the event type
+      BRANCH_NAME: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
+      UPLOAD_RELEASES: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload_releases || 'false' }}
+      MARK_PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mark_prerelease || 'false' }}
+      DEFCONFIG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.defconfig || 'C7S_prime_defconfig' }}
     steps:
 
     - name: Set swap to 10G
@@ -49,7 +55,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.inputs.branch || github.ref_name }}
+        ref: ${{ env.BRANCH_NAME }}
         fetch-depth: 1
         
     - name: Kernel build deps
@@ -58,26 +64,34 @@ jobs:
         sudo apt-get install git ccache automake flex lzop bison gperf build-essential zip curl zlib1g-dev g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools pngcrush schedtool dpkg-dev liblz4-tool make optipng maven libssl-dev pwgen libswitch-perl policycoreutils minicom libxml-sax-base-perl libxml-simple-perl bc libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev libgl1-mesa-dev xsltproc unzip device-tree-compiler python3 python2.7
         sudo update-alternatives --install /usr/bin/python python /usr/bin/python2.7 1
         sudo update-alternatives --set python /usr/bin/python2.7
-        
+
     - name: Download gcc
       run: |
         git clone https://github.com/djb77/aarch64-linux-android-4.9 ../aarch64-linux-android-4.9
-        
-    - name: build kernel
+
+    - name: Build kernel
       run: |
-        ./build_kernel.sh ${{ github.event.inputs.defconfig || 'C7S_prime_defconfig' }}
+        ./build_kernel.sh ${{ env.DEFCONFIG }}
+    
     
     - name: Creating AnyKernel3 zip
       run: |
-        pushd arch/arm/boot && ls */* && popd
-        ./KernelSU/scripts/kernel_zipper.sh
-        
+        ./kernel_zipper.sh
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      if: inputs.upload_releases == false || github.event_name != 'workflow_dispatch'
+      with:
+        name: RuskKernel-${{ github.event.repository.name }}
+        path: |
+          *.zip
+
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
       if: github.event_name == 'workflow_dispatch' && inputs.upload_releases == true
       with:
         files: |
-          *ernel*.zip
+          *.zip
         name: Kernel Flashable zip // ${{ inputs.tag_name }}
         tag_name: ${{ inputs.tag_name }}
         body: |
