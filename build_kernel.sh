@@ -2,29 +2,32 @@
 
 set -e
 
+# Check if defconfig is provided
 if [ -z "$1" ]; then
-echo "Error: Enter the defconfig"
-exit
+    echo "Error: Please enter the defconfig"
+    exit 1
 fi
 
-# if [ -z "$2" == --clang ]; then
-# echo "Using clang."
-# export LLVM=1
-# fi
-
-if [ ! -d "../aarch64-linux-android-4.9" ]; then
-echo "GCC toolchain not avaliable at $../aarch64-linux-android-4.9"
-exit
+# Set up toolchain
+TOOLCHAIN_DIR="../arm-linux-androideabi-4.9"
+if [ ! -d "$TOOLCHAIN_DIR" ]; then
+    echo "GCC toolchain not available at $TOOLCHAIN_DIR"
+    exit 1
 fi
 
-rm -rf out && mkdir out
+# Clean up previous builds
+rm -rf out
+mkdir out
 
-make clean && make mrproper
+# Clean the kernel source
+make clean
+make mrproper
 
-export CROSS_COMPILE="$(pwd)/../aarch64-linux-android-4.9/bin/aarch64-linux-android-"
-export ARCH=arm64
+# Set up environment variables
+export CROSS_COMPILE="$(pwd)/$TOOLCHAIN_DIR/bin/arm-linux-androideabi-"
+export ARCH=arm
 export O=out
 
+# Build the kernel
 make $1 O=out
-
 make -j$(nproc) O=out
