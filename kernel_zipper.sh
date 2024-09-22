@@ -112,6 +112,6 @@ fi
 cd "$ANYKERNEL_DIR"
 zip -r9 "$FINAL_KERNEL_ZIP" * -x .git README.md kernel_zipper.sh *placeholder
 
-mv $FINAL_KERNEL_ZIP $KERNEL_DIR/$FINAL_KERNEL_ZIP
+mv $FINAL_KERNEL_ZIP ../$FINAL_KERNEL_ZIP
 
 echo "AnyKernel zip created: $FINAL_KERNEL_ZIP"
